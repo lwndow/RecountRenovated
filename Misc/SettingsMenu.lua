@@ -11,7 +11,7 @@ function Recount.SettingsMenu.Initialize()
 		name = Recount.name,
 		displayName = Recount.name.." Settings",
 		author = "Fayn, McGuffin, Shadow-Fighter, & lwndow",
-		version = "0.6.4",
+		version = "0.6.5",
 		registerForRefresh = true,
 		registerForDefaults = true,
 	}
@@ -55,6 +55,14 @@ function Recount.SettingsMenu:Setup()
 			type = "header",
 			name = "Version "  .. Recount.versionString,
 			width = "full",
+		},
+		{
+			type = "checkbox",
+			name = "Use Account-Wide Settings [RELOADS UI ON CLICK]",
+			tooltip = "Recount will use the same settings for all characters",
+			getFunc = function() return RecountSettings.Default[GetDisplayName()]['$AccountWide'].useAccountWide end,
+			setFunc = function(v) RecountSettings.Default[GetDisplayName()]['$AccountWide'].useAccountWide = v ReloadUI() end,
+			default = Recount.settings.useAccountWide,
 		},
 		{
 			type = "checkbox",

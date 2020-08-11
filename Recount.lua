@@ -13,7 +13,7 @@
 Recount = {}
 Recount.name = "Recount"
 Recount.command = "/recount"
-Recount.versionString = "0.6.4"
+Recount.versionString = "0.6.5"
 Recount.versionSettings = 10
 Recount.versionBuild = 25
 
@@ -81,6 +81,7 @@ Recount.settingsDefaults = {
 	suspendDataCollectionWhileHidden = false,
 	onlyUseKey = false,
 	minLogValue = 0,
+	useAccountWide = false,
 
 	--totalStatusLabel = "Total #td eDps: #edps (#tdcrit%) | #th eHps: #ehps (#thc) [#tdur]",
 	--lastStatusLabel = "Last Dps: #dps (#ldcrit) | Hps: #hps (#lhcrit) [#ldur]",
@@ -155,7 +156,13 @@ function Recount.Initialize( eventCode, addOnName )
 		return
 	end
 
-	Recount.settings = ZO_SavedVars:New( "RecountSettings" , Recount.versionSettings, nil, Recount.settingsDefaults, nil )
+	-- do we want things by character, or account wide? let the player decide
+	Recount.settings = ZO_SavedVars:NewAccountWide( "RecountSettings" , Recount.versionSettings, nil, Recount.settingsDefaults, nil )
+	
+	-- this is false by default, not false == true, need initial prime of variable above
+	if ( not Recount.settings.useAccountWide ) then
+		Recount.settings = ZO_SavedVars:NewCharacterNameSettings( "RecountSettings" , Recount.versionSettings, nil, Recount.settingsDefaults, nil )
+	end
 
 	EVENT_MANAGER:RegisterForEvent( Recount.name, EVENT_COMBAT_EVENT, Recount.CombatEvent )
 	EVENT_MANAGER:RegisterForEvent( Recount.name, EVENT_PLAYER_COMBAT_STATE, Recount.CombatStateEvent )

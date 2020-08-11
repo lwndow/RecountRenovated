@@ -1,3 +1,44 @@
+#### v0.5.9 (Shadow-Fighter)
+* able to change font face, size, color from settings menu
+
+#### v0.5.8 (Shadow-Fighter)
+* updated LibAddonMenu-2.0 r17 to LibAddonMenu-2.0 r24
+
+#### v0.5.7 (Shadow-Fighter)
+* updated to API 100020
+
+#### v0.5.6 (Shadow-Fighter)
+* updated to API 100019
+
+#### v0.5.5 (Garkin)
+* updated from LibAddonMenu-1.0 to LibAddonMenu-2.0
+* added LibMediaProvider-1.0 support
+* minor changes
+
+#### v0.5.4 (Shadow-Fighter)
+* updated to API 100011 (Update 6)
+* minor changes
+
+#### v0.5.3 (Shadow-Fighter)
+* Added "COPYRIGHT" file
+* Removed Zos disclaimer from Recount.txt and added into COPYRIGHT file
+* Added credits to Seerah's LibStub and LibAddonMenu into COPYRIGHT file
+
+#### v0.5.2 (Shadow-Fighter)
+* Added "ReadMe.rtf" file (this document)
+* Updated LibAddonMenu-1.0
+* Enabled the settings menu again
+
+#### v0.5.1 (Shadow-Fighter)
+* Settings menu is temporary disabled to work with the Update 5
+* Addon menu revised to Update 5
+* API Version updated to 100010 (Update 5)
+
+#### v0.5.0 (McGuffin)
+* Updated api version
+* Added an option to disable auto show/hide switches. If enabled, the RecountUI can only be toggled through command shortcuts
+* Added Zos disclaimer in Recount.txt
+
 #### v0.4.9 (McGuffin)
 * using a self damage skill (like equilibrium) doesnt start a new combat session anymore
 

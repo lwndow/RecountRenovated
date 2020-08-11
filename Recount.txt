@@ -1,8 +1,8 @@
 ## Title: Recount
-## Author: Fayn, McGuffin, |c00FF00Shadow-Fighter|r, & lwndow
+## Author: Fayn, McGuffin, Shadow-Fighter, & lwndow
 ## Description: Recount is a damage meter and combat log addon which is still in development.
-## AddOnVersion: 064
-## Version: 0.6.4
+## AddOnVersion: 065
+## Version: 0.6.5
 ## APIVersion: 100031 100032
 ## SavedVariables: RecountSettings
 ## DependsOn: LibAddonMenu-2.0>=31 LibMediaProvider-1.0>=14
