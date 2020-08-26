@@ -10,12 +10,10 @@
 	Ferather branch merged to 0.7.x series
   ]]--
 
-
-
 Recount = {}
 Recount.name = "Recount"
 Recount.command = "/recount"
-Recount.versionString = "0.7"
+Recount.versionString = "0.7.1"
 Recount.versionSettings = 10
 Recount.versionBuild = 25
 
@@ -32,6 +30,8 @@ Recount.totalMode = false
 Recount.topBarId = 1
 Recount.maxComputedBars = 32
 Recount.UIinMenu = false
+
+Recount.trackedUnits = {}
 
 local EVENT_TYPE_IGNORE = 0
 local EVENT_TYPE_DAMAGE = 1
@@ -85,9 +85,8 @@ Recount.settingsDefaults = {
 	minDPSLogValue = 0,
 	minHPSLogValue = 0,
 	useAccountWide = false,
-
-	--totalStatusLabel = "Total #td DPS: #dps (#tdcrit%) | #th HPS: #hps (#thc) [#tdur]",
-	--lastStatusLabel = "Last DPS: #dps (#ldcrit) | HPS: #hps (#lhcrit) [#ldur]",
+	damageIgnore = 0,
+	healIgnore = 0,
 
 	countDeflectedDmg = false,
 
@@ -112,9 +111,6 @@ Recount.settingsDefaults = {
 	},
 }
 
--- contains elements similar to playerUnit, unit 1 is always the player itself
-Recount.trackedUnits = {}
-
 --[[==========================================
 	playerUnit
 	Prototype for the unit structure
@@ -132,18 +128,18 @@ local playerUnit = {
 		damageTaken = 0,
 		healingDone = 0,
 		healingTaken = 0,
-
+		
 		healingCount = 0,
 		critHealingCount = 0,
 		damageCount = 0,
 		critDamageCount = 0,
-
+		
 		dps = 0,
 		hps = 0,
-
+		
 		timeStart = 0,
 		timeSpan = 0,
-
+		
 		damagePerAbility = {},
 		healPerAbility = {},
 	},
@@ -154,15 +150,13 @@ local playerUnit = {
 	Initialize
 	==========================================]]--
 function Recount.Initialize( eventCode, addOnName )
-	-- Only set up for Recount
+	
 	if ( addOnName ~= Recount.name ) then
 		return
 	end
 
-	-- do we want things by character, or account wide? let the player decide
 	Recount.settings = ZO_SavedVars:NewAccountWide( "RecountSettings" , Recount.versionSettings, nil, Recount.settingsDefaults, nil )
 	
-	-- this is false by default, not false == true, need initial prime of variable above
 	if ( not Recount.settings.useAccountWide ) then
 		Recount.settings = ZO_SavedVars:NewCharacterNameSettings( "RecountSettings" , Recount.versionSettings, nil, Recount.settingsDefaults, nil )
 	end
@@ -173,11 +167,6 @@ function Recount.Initialize( eventCode, addOnName )
 
 	SLASH_COMMANDS[Recount.command] = Recount.SlashCommands
 
-	-- autoHide manager, use cursor events--------->
-	--EVENT_MANAGER:RegisterForEvent( Recount.name,EVENT_ACTION_LAYER_PUSHED, Recount.autoToggleHide)
-	--EVENT_MANAGER:RegisterForEvent( Recount.name,EVENT_ACTION_LAYER_POPPED, Recount.autoToggleShow)
-
-	-- or... lets link to the hud instead, so it will switch nicely
 	local	w = WINDOW_MANAGER:CreateTopLevelWindow()
 			w:SetDimensions(1,1)
 			w:SetAnchor(CENTER, GuiRoot, CENTER, 0, 0)
@@ -192,31 +181,21 @@ function Recount.Initialize( eventCode, addOnName )
 
 	Recount.InitUI()
 
-	-- never start in minimized mode
 	if ( Recount.settings.currentMode == RC_MODE_MINIMIZED ) then
 		Recount.settings.currentMode = RC_MODE_COMBAT_LOG
 	end
 	Recount.SetMode( Recount.settings.currentMode, true )
 
-	-- first tracked unit it always the player
 	Recount.trackedUnits[1] = playerUnit
-
-	-- set up the addon settings menu
 	Recount.SettingsMenu.Initialize()
 
 	Recount.CombatLogMsg( string.format( "Recount (%s) loaded.", Recount.versionString ) )
 	Recount.CombatLogMsg( "Press the 'M' button in the top right corner to switch between modes." )
 	Recount.CombatLogMsg( "Press the 'R' button in the top right corner to reset Recount." )
 	Recount.doUpdateUI()
-
-	--if Recount.isDebugMode then
-	--	Recount.TestProgressBars()
-	--end
 end
 
--- Hook initialization onto the ADD_ON_LOADED event
 EVENT_MANAGER:RegisterForEvent( Recount.name, EVENT_ADD_ON_LOADED, Recount.Initialize )
-
 
 --[[==========================================
 	FormatNumber
@@ -256,8 +235,6 @@ local function convertTimeStampS(ms)
 end
 
 function Recount.InitUI()
-	-- RecountUI:SetResizeHandleSize( MOUSE_CURSOR_RESIZE_NS )
-
 	if ( Recount.settings.wndMain.width < 10 ) then
 		Recount.settings.wndMain.width = Recount.settingsDefaults.wndMain.width
 	end
@@ -274,13 +251,11 @@ function Recount.InitUI()
 	RecountUI:SetWidth( Recount.settings.wndMain.width )
 	RecountUI:SetHeight( Recount.settings.wndMain.height )
 
--- Recount.topBarId
 	for i = 1, UI_STATUSBAR_MAX do
 		local statusBar = CreateControlFromVirtual( "$(parent)Statusbar", RecountUI, "RecountStatusbarTemplate", i )
 		statusBar:SetAnchor( TOPLEFT, RecountUI, TOPLEFT, 0, i * UI_STATUSBAR_HEIGHT )
 		statusBar:SetMouseEnabled(true)
 		statusBar:SetHandler("OnMouseWheel" , Recount.scrollBars)
-		--statusBar:SetHandler("OnMouseEnter",  Recount.barsMouseEnter)
 	end
 
 	RecountUIDebug:SetHidden( true )
@@ -339,20 +314,18 @@ function Recount.OnResizeStop( self )
 end
 
 function Recount.GetMinWidth()
-	-- buttons + margin
 	return 100 + 25 + 25 + 25
 end
 
 function Recount.GetMinHeight()
-	-- titlebar + statusbar + 1 progressbar
 	return UI_STATUSBAR_HEIGHT + UI_TITLEBAR_HEIGHT + Recount.settings.progressBarHeight
 end
 
 function Recount.FitStatusBars()
-	-- calculate how many bars are visible
 	local clientHeight = RecountUI:GetHeight() - UI_TITLEBAR_HEIGHT - UI_STATUSBAR_HEIGHT
 	local numBars = clientHeight / Recount.settings.progressBarHeight
 	local offset = 1
+	
 	for i = 1, UI_STATUSBAR_MAX do
 		local statusBar = GetControl(RecountUI, "Statusbar"..i)
 		statusBar:SetHidden( true )
@@ -390,25 +363,16 @@ function Recount.FitUIElements()
 	RecountUI_lblCombatLog:SetWidth( w )
 	RecountUI_lblCombatLog:SetHeight( h - UI_STATUSBAR_HEIGHT - UI_TITLEBAR_HEIGHT )
 
-	
-	-- set UI fonts from SettingsMenu
-
-	-- Title
 	RecountUI_Title_Text:SetFont( Recount.SettingsMenu:GetFont() )
 	RecountUI_Title_ButtonReset:SetFont( Recount.SettingsMenu:GetFont() )
 	RecountUI_Title_Button:SetFont( Recount.SettingsMenu:GetFont() )
 	RecountUI_Title_ButtonHide:SetFont( Recount.SettingsMenu:GetFont() )
 
-	-- Combat log
 	RecountUI_lblCombatLog:SetFont( Recount.SettingsMenu:GetFont() )
-
-	-- StatusBar
 	RecountUI_lblStatus:SetFont( Recount.SettingsMenu:GetFont() )
-
 
 	Recount.FitStatusBars()
 end
-
 
 --[[==========================================
 	UpdateUI
@@ -466,9 +430,6 @@ function Recount.OnUpdate( self )
 
 end
 
---[[==========================================
-
-	==========================================]]--
 function Recount.CombatLogMsg( msg )
 	local tStamp = " "
 	if playerUnit.session then
@@ -476,9 +437,6 @@ function Recount.CombatLogMsg( msg )
 	end
 	RecountUI_lblCombatLog:AddMessage( zo_strformat("|c777777 <<1>> |r  <<2>>", tStamp, msg))
 end
---[[==========================================
-
-	==========================================]]--
 
 function Recount.playerEnterCombat()
 	EVENT_MANAGER:UnregisterForUpdate("hideOOC")
@@ -487,15 +445,15 @@ function Recount.playerEnterCombat()
 		return
 	end
 	Recount.inCombat = true
-	--new session
+
 	Recount.StartNewSession()
-	--compute total active time:
+
 	if playerUnit.total.timeStart == 0 then
 		playerUnit.total.timeStart = Recount.time
 	else
 		playerUnit.total.timeStart = Recount.time - playerUnit.total.timeSpan
 	end
-	--feedback
+
 	Recount.CombatLogMsg( "+++ Combat +++" )
 	if (Recount.settings.onlyUseKey == false)  then
 		Recount.Show()
@@ -563,7 +521,6 @@ end
 	==========================================]]--
 function Recount.CheckIgnoreCombatEvent( result, isError, hitValue, powerType, damageType )
 
-	-- ignore non-successful casts
 	if ( isError ) then
 		return EVENT_TYPE_IGNORE, 0, 0, 0, 0
 	end
@@ -572,7 +529,6 @@ function Recount.CheckIgnoreCombatEvent( result, isError, hitValue, powerType, d
 		return EVENT_TYPE_IGNORE, 0, 0, 0, 0
 	end
 
-	-- ignore certain powers
 	if ( powerType == POWERTYPE_INVALID or powerType == POWERTYPE_MOUNT_STAMINA ) then
 		return EVENT_TYPE_IGNORE, 0, 0, 0, 0
 	end
@@ -625,7 +581,6 @@ function Recount.CheckIgnoreCombatEvent( result, isError, hitValue, powerType, d
 		return EVENT_TYPE_DAMAGE, 1, 1, 0, 0
 	end
 
-	--dot
 	if ( result == ACTION_RESULT_DOT_TICK) then
 		return EVENT_TYPE_DAMAGE, 0, 0, 1, 0
 	end
@@ -634,58 +589,8 @@ function Recount.CheckIgnoreCombatEvent( result, isError, hitValue, powerType, d
 		return EVENT_TYPE_DAMAGE, 0, 0, 1, 1
 	end
 
-	-- if ( powerType == POWERTYPE_STAMINA or powerType == POWERTYPE_FINESSE or powerType == POWERTYPE_MAGICKA ) then
-		-- return true
-	-- end
-
-	-- blacklist certain abilities ("Sprint Drain")
-	-- if ( abilityName == "Sprint Drain" ) then
-		-- return true
-	-- end
-
 	return EVENT_TYPE_IGNORE, 0, 0, 0, 0
 end
-
---[[
-
-DamageType
------
-DAMAGE_TYPE_BLEED
-DAMAGE_TYPE_COLD
-DAMAGE_TYPE_DISEASE
-DAMAGE_TYPE_DROWN
-DAMAGE_TYPE_EARTH
-DAMAGE_TYPE_FIRE
-DAMAGE_TYPE_GENERIC
-DAMAGE_TYPE_MAGIC
-DAMAGE_TYPE_NONE
-DAMAGE_TYPE_OBLIVION
-DAMAGE_TYPE_PHYSICAL
-DAMAGE_TYPE_POISON
-DAMAGE_TYPE_SHOCK
-
-
-CombatMechanicType
------
-POWERTYPE_FINESSE
-POWERTYPE_HEALTH
-POWERTYPE_INVALID
-POWERTYPE_MAGICKA
-POWERTYPE_MOUNT_STAMINA
-POWERTYPE_STAMINA
-POWERTYPE_ULTIMATE
-POWERTYPE_WEREWOLF
-
-
-CombatUnitType
------
-COMBAT_UNIT_TYPE_GROUP
-COMBAT_UNIT_TYPE_NONE
-COMBAT_UNIT_TYPE_OTHER
-COMBAT_UNIT_TYPE_PLAYER
-COMBAT_UNIT_TYPE_PLAYER_PET
-
-]]--
 
 function Recount.DebugStringifyUnitType( unitType )
 	if ( unitType == COMBAT_UNIT_TYPE_PLAYER ) then
@@ -730,6 +635,8 @@ end
 	UnitDamageDone
 	==========================================]]--
 local function UnitDamageDone( unitID, abilityName, sourceName, targetName, hitValue, result, hitCount, critCount, dotCount, dotCritCount )
+	if hitValue <= Recount.settings.damageIgnore then return end
+
 	local u = Recount.trackedUnits[unitID]
 
 	if sourceName ~= targetName	then
@@ -744,7 +651,6 @@ local function UnitDamageDone( unitID, abilityName, sourceName, targetName, hitV
 	AddAbilityValue( u.total.damagePerAbility, abilityName, hitValue, hitCount, critCount, dotCount, dotCritCount )
 	AddAbilityValue( u.session.damagePerAbility, abilityName, hitValue, hitCount, critCount, dotCount, dotCritCount )
 
-	-- respect the minimum value set
 	if ( hitValue >= Recount.settings.minDPSLogValue ) then
 		local eventString = zo_strformat( "|cCCCC55 <<1>><<2>><<3>>|r -> |c883333 <<4>>|r - <<5>>", getTag(dotCount == 1, Recount.settings.dotTag), hitValue, getTag((critCount == 1 ) or (dotCritCount == 1), Recount.settings.critTag), targetName, abilityName )
 		Recount.CombatLogMsg( eventString )
@@ -771,6 +677,7 @@ end
 	UnitHealingDone
 	==========================================]]--
 local function UnitHealingDone( unitID, abilityName, targetName, hitValue, result, hitCount, critCount, dotCount, dotCritCount  )
+	if hitValue <= Recount.settings.healIgnore then return end
 
 	local u = Recount.trackedUnits[unitID]
 
@@ -784,7 +691,6 @@ local function UnitHealingDone( unitID, abilityName, targetName, hitValue, resul
 	AddAbilityValue( u.total.healPerAbility, abilityName, hitValue, hitCount, critCount, dotCount, dotCritCount )
 	AddAbilityValue( u.session.healPerAbility, abilityName, hitValue, hitCount, critCount, dotCount, dotCritCount )
 
-	-- respect the minimum value set
 	if ( hitValue >= Recount.settings.minHPSLogValue ) then
 		local eventString = zo_strformat( "|c449944 <<1>><<2>><<3>>|r -> |c447744 <<4>>|r - <<5>>", getTag(dotCount > 0, Recount.settings.dotTag), hitValue, getTag((critCount > 0) or (dotCritCount > 0), Recount.settings.critTag), targetName, abilityName )
 		Recount.CombatLogMsg( eventString )
@@ -803,7 +709,6 @@ local function UnitHealingTaken( unitID, abilityName, sourceName, targetName, hi
 	u.session.healingTaken = u.session.healingTaken + hitValue
 
 	if sourceName ~= targetName then
-		-- respect the minimum value set
 		if ( hitValue >= Recount.settings.minHPSLogValue ) then
 			local eventString = zo_strformat( "|c449944 <<1>>|r <- |c447744 <<2>>|r - <<3>>", hitValue, targetName, abilityName)
 			Recount.CombatLogMsg( eventString )
@@ -817,12 +722,10 @@ end
 	Message handler
 	==========================================]]--
 function Recount.CombatEvent( eventCode, result, isError, abilityName, abilityGraphic, abilityActionSlotType, sourceName, sourceType, targetName, targetType, hitValue, powerType, damageType, log )
-	-- check if we collect data in background
 	if ( Recount.settings.suspendDataCollectionWhileHidden and Recount.settings.wndMain.isVisible == false ) then
 		return
 	end
 
-	-- update Recount time pointer
 	Recount.time = GetGameTimeMilliseconds()
 
 	if ( Recount.isDebugMode ) then
@@ -835,25 +738,21 @@ function Recount.CombatEvent( eventCode, result, isError, abilityName, abilityGr
 		return
 	end
 
-	--if player do or take damage, and is not in combat, then create a combat session
 	local playerInCombat = (sourceType == COMBAT_UNIT_TYPE_PLAYER or targetType == COMBAT_UNIT_TYPE_PLAYER)
 	if (Recount.inCombat == false) and (playerInCombat == true) and	(eventType == EVENT_TYPE_DAMAGE) and (sourceType ~= targetType) then
 		Recount.playerEnterCombat()
 	end
 
-	--are we in a real combat segment?
 	if Recount.inCombat == true then
-		-- check if we should care about this combat event
 		if ( sourceType ~= COMBAT_UNIT_TYPE_PLAYER and targetType ~= COMBAT_UNIT_TYPE_PLAYER and
 			 sourceType ~= COMBAT_UNIT_TYPE_PLAYER_PET and targetType ~= COMBAT_UNIT_TYPE_PLAYER_PET and
 			 sourceType ~= COMBAT_UNIT_TYPE_GROUP and targetType ~= COMBAT_UNIT_TYPE_GROUP ) then
 			return
 		end
-
+		
 		playerUnit.total.timeSpan = Recount.time - playerUnit.total.timeStart
 		playerUnit.session.timeSpan = Recount.time - playerUnit.session.timeStart
-
-		-- Player is the TARGET
+		
 		if ( targetType == COMBAT_UNIT_TYPE_PLAYER ) then
 			if ( eventType == EVENT_TYPE_DAMAGE ) then
 				UnitDamageTaken( 1, abilityName, sourceName, targetName, hitValue, result)
@@ -861,10 +760,8 @@ function Recount.CombatEvent( eventCode, result, isError, abilityName, abilityGr
 				UnitHealingTaken( 1, abilityName, sourceName, targetName, hitValue, result)
 			end
 		end
-
-		-- Player/Pet is the SOURCE
+		
 		if ( sourceType == COMBAT_UNIT_TYPE_PLAYER or sourceType == COMBAT_UNIT_TYPE_PLAYER_PET ) then
-
 			if ( eventType == EVENT_TYPE_HEAL ) then
 				UnitHealingDone( 1, abilityName, targetName, hitValue , result, hitCount, critCount, dotCount, dotCritCount )
 			elseif ( eventType == EVENT_TYPE_DAMAGE ) then
@@ -877,10 +774,6 @@ function Recount.CombatEvent( eventCode, result, isError, abilityName, abilityGr
 end
 
 function Recount.StartNewSession()
-
-	-- currently only use one session
-	-- playerUnit.sessionCurrent = playerUnit.sessionCurrent + 1
-
 	if ( playerUnit.sessionCurrent > Recount.settings.numStoredSessions ) then
 		playerUnit.sessionCurrent = 1
 	end
@@ -892,19 +785,18 @@ function Recount.StartNewSession()
 		damageTaken = 0,
 		healingDone = 0,
 		healingTaken = 0,
-
-		--crit
+		
 		healingCount = 0,
 		critHealingCount = 0,
 		damageCount = 0,
 		critDamageCount = 0,
-
+		
 		dps = 0,
 		hps = 0,
-
+		
 		timeStart = Recount.time,
 		timeSpan = 1,
-
+		
 		damagePerAbility = {},
 		healPerAbility = {},
 	}
@@ -926,7 +818,7 @@ function Recount.Reset()
 	playerUnit.total.healingDone = 0
 	playerUnit.total.damagePerAbility = {}
 	playerUnit.total.healPerAbility = {}
-	--crit
+
 	playerUnit.total.healingCount = 0
 	playerUnit.total.critHealingCount = 0
 	playerUnit.total.damageCount = 0
@@ -972,14 +864,13 @@ function Recount.FillProgressBars( abilityTable, totalValue )
 	table.sort(keys,function(a,b) return a.data.hitValue > b.data.hitValue end)
 
 	for i,skill in ipairs(keys) do
-
 		if dMax == 0 then
 			dMax = skill.data.hitValue
 		end
-
-		local abilityName = zo_strformat("<<1>>", skill.key) --get rid of the string suffixe in some languages
+		
+		local abilityName = zo_strformat("<<1>>", skill.key)
 		local dmgAbs = skill.data.hitValue
-
+		
 		local fbString = ""
 		if Recount.settings.showSkillDetails == true then
 			if skill.data.hitCount > 0 then
@@ -989,10 +880,10 @@ function Recount.FillProgressBars( abilityTable, totalValue )
 				fbString = zo_strformat("<<1>> |cFF7777 #ticks: <<2>>|r |cFF5555 crit: <<3>>%|r", fbString, skill.data.dotCount, secureDivide(skill.data.dotCritCount, skill.data.dotCount) * 100)
 			end
 		end
-
-		local barSize = secureDivide(dmgAbs , dMax) * 100 --size of the bar vs best skill
-		local dmgRel = secureDivide(dmgAbs, totalValue) * 100 --%damage vs other skills
-
+		
+		local barSize = secureDivide(dmgAbs , dMax) * 100 
+		local dmgRel = secureDivide(dmgAbs, totalValue) * 100
+		
 		if ( i <= UI_STATUSBAR_MAX ) then
 			local statusBar = GetControl(RecountUI, "Statusbar"..i)
 			statusBar:SetValue( barSize )
@@ -1000,7 +891,7 @@ function Recount.FillProgressBars( abilityTable, totalValue )
 			statusBar:SetColor( 0.8 - i*0.05, 0.8 - i*0.05, 0.3, 0.8 )
 			Recount.maxComputedBars = Recount.maxComputedBars + 1
 		end
-
+		
 		i = i + 1
 	end
 	keys = {}
@@ -1017,35 +908,28 @@ function Recount.UpdateModeUI()
 
 	if ( Recount.settings.currentMode == RC_MODE_DAMAGE_DONE_TOTAL ) then
 		Recount.FillProgressBars( playerUnit.total.damagePerAbility, playerUnit.total.damageDone )
-
 	elseif ( Recount.settings.currentMode == RC_MODE_DAMAGE_DONE) then
 		if ( playerUnit.session ~= nil ) then
 			Recount.FillProgressBars( playerUnit.session.damagePerAbility, playerUnit.session.damageDone )
 		end
-
 	elseif ( Recount.settings.currentMode == RC_MODE_DAMAGE_TAKEN) then
 		if ( playerUnit.session ~= nil ) and playerUnit.session.damageTaken > 0 then
 			Recount.FillSingleProgressBar( "Damage Taken", playerUnit.session.damageTaken )
 		end
-
 	elseif ( Recount.settings.currentMode == RC_MODE_DAMAGE_TAKEN_TOTAL) then
 		if playerUnit.total.damageTaken > 0 then
 			Recount.FillSingleProgressBar( "Damage Taken", playerUnit.total.damageTaken )
 		end
-
 	elseif ( Recount.settings.currentMode == RC_MODE_HEALING_DONE) then
 		if ( playerUnit.session ~= nil ) then
 			Recount.FillProgressBars( playerUnit.session.healPerAbility, playerUnit.session.healingDone )
 		end
-
 	elseif ( Recount.settings.currentMode == RC_MODE_HEALING_DONE_TOTAL) then
 		Recount.FillProgressBars( playerUnit.total.healPerAbility, playerUnit.total.healingDone )
-
 	elseif ( Recount.settings.currentMode == RC_MODE_HEALING_TAKEN) then
 		if ( playerUnit.session ~= nil ) and playerUnit.session.healingTaken > 0 then
 			Recount.FillSingleProgressBar( "Healing Taken", playerUnit.session.healingTaken )
 		end
-
 	elseif ( Recount.settings.currentMode == RC_MODE_HEALING_TAKEN_TOTAL) then
 		if playerUnit.total.healingTaken > 0 then
 			Recount.FillSingleProgressBar( "Healing Taken", playerUnit.total.healingTaken )
@@ -1066,7 +950,6 @@ function Recount.SetMode( mode, doUpdate )
 	Recount.ClearProgressBars()
 
 	RecountUI_Title_Text:SetText( Recount.name .. " - " .. modeStrings[mode] )
-
 
 	RecountUI_Title:SetHidden( false )
 	RecountUI_lblCombatLogBG:SetHidden( false )

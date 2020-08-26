@@ -47,6 +47,10 @@ Go to the "Elder Scrolls Online" folder in your Documents
 * **NOTE**: This installs as `Recount` not `RecountRenovated` to persist from previous settings. 
 
 ### Release History
+#### 0.7.1 (Ferather)
+* Fixed an issue with when text was entered and not a number
+* Added damage filters
+
 #### 0.7 (Ferather + lwndow)
 * sync'd in Ferather's changes from their 0.6.5 (with permission)
   * The first ability used to enter combat is now tracked correctly.
