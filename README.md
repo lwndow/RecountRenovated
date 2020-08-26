@@ -4,10 +4,19 @@ A modernization of the Recount combat modification for The Elder Scrolls Online 
 ## Overview
 Recount is a damage meter and combat log addon which is still in development.
 
-Based on Fayn's work (original Copyright by him)
+### Credits
+Based on Fayn's work (original Copywright by him)
+
 Updated and maintained by McGuffin since 0.4.0
+
 Updated by Shadow-Fighter since 0.5.1
+
+Updated by Ferather since 0.6.4
+
 Updated by lwndow since 0.6.4
+
+Ferather branch (https://www.esoui.com/downloads/info2754-RecountUpdate.html) merged to 0.7.x series
+
 
 This addon uses the following libraries:
 - "LibAddonMenu-2.0" (http://www.esoui.com/downloads/info7-LibAddonMenu.html)
@@ -38,6 +47,14 @@ Go to the "Elder Scrolls Online" folder in your Documents
 * **NOTE**: This installs as `Recount` not `RecountRenovated` to persist from previous settings. 
 
 ### Release History
+#### 0.7 (Ferather + lwndow)
+* sync'd in Ferather's changes from their 0.6.5 (with permission)
+  * The first ability used to enter combat is now tracked correctly.
+  * Polished the UI, and updated some UI code.
+  * Added damage ignore options to the addon settings menu.
+  * **NOTE** (lwndow): My version differs slightly from his as it ignores printing to the log but still tallies for total DPS/HPS 
+* fixed auto toggle to damage done, but default this to false in agreeance with Ferather's stance
+
 #### 0.6.5 (lwndow)
 * added option for account-wide settings vs per-character
 
