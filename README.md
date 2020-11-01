@@ -47,6 +47,9 @@ Go to the "Elder Scrolls Online" folder in your Documents
 * **NOTE**: This installs as `Recount` not `RecountRenovated` to persist from previous settings. 
 
 ### Release History
+#### 0.7.2 (lwndow)
+* API bump for Markarth (100033)
+
 #### 0.7.1 (Ferather)
 * Fixed an issue with when text was entered and not a number
 * Added damage filters

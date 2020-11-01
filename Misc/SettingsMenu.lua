@@ -11,7 +11,7 @@ function Recount.SettingsMenu.Initialize()
 		name = Recount.name,
 		displayName = Recount.name.." Settings",
 		author = "lwndow, Ferather, Shadow-Fighter, and others",
-		version = "0.7.1",
+		version = "0.7.2",
 		registerForRefresh = true,
 		registerForDefaults = true,
 	}
