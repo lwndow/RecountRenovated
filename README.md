@@ -47,6 +47,9 @@ Go to the "Elder Scrolls Online" folder in your Documents
 * **NOTE**: This installs as `Recount` not `RecountRenovated` to persist from previous settings. 
 
 ### Release History
+#### 0.7.3 (lwndow)
+* API bump for Flames of Ambition (100034)
+
 #### 0.7.2 (lwndow)
 * API bump for Markarth (100033)
 
