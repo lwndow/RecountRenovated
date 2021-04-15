@@ -1,3 +1,24 @@
+#### 0.6.5 (lwndow)
+* added option for account-wide settings vs per-character
+
+#### 0.6.4 (lwndow)
+* updated to API 100031 (Greymoor) & 100032 (Stonethorn)
+* removed libstub dependency
+* added hard dependencies, removed embedded libs (you need to grab them from ESOUI/Minion)
+* added request from forum to ignore values below a certain threshold in the log
+
+#### v0.6.3 (Shadow-Fighter)
+* updated to API 100024
+
+#### v0.6.2 (Shadow-Fighter)
+* updated LibAddonMenu-2.0 r24 to LibAddonMenu-2.0 r26
+
+#### v0.6.1 (Shadow-Fighter)
+* updated to API 100023
+
+#### v0.6.0 (Shadow-Fighter)
+* updated to API 100021
+
 #### v0.5.9 (Shadow-Fighter)
 * able to change font face, size, color from settings menu
 

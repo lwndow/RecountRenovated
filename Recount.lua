@@ -13,7 +13,7 @@
 Recount = {}
 Recount.name = "Recount"
 Recount.command = "/recount"
-Recount.versionString = "0.7.3"
+Recount.versionString = "0.7.4"
 Recount.versionSettings = 10
 Recount.versionBuild = 25
 
@@ -639,19 +639,17 @@ local function UnitDamageDone( unitID, abilityName, sourceName, targetName, hitV
 
 	local u = Recount.trackedUnits[unitID]
 
-	if sourceName ~= targetName	then
-		u.session.damageDone = u.session.damageDone + hitValue
-		u.session.damageCount = u.session.damageCount + hitCount + dotCount
-		u.session.critDamageCount = u.session.critDamageCount + critCount + dotCritCount
-		u.total.damageDone = u.total.damageDone + hitValue
-		u.total.damageCount = u.total.damageCount + hitCount + dotCount
-		u.total.critDamageCount = u.total.critDamageCount + critCount + dotCritCount
-	end
+	u.session.damageDone = u.session.damageDone + hitValue
+	u.session.damageCount = u.session.damageCount + hitCount + dotCount
+	u.session.critDamageCount = u.session.critDamageCount + critCount + dotCritCount
+	u.total.damageDone = u.total.damageDone + hitValue
+	u.total.damageCount = u.total.damageCount + hitCount + dotCount
+	u.total.critDamageCount = u.total.critDamageCount + critCount + dotCritCount
 
 	AddAbilityValue( u.total.damagePerAbility, abilityName, hitValue, hitCount, critCount, dotCount, dotCritCount )
 	AddAbilityValue( u.session.damagePerAbility, abilityName, hitValue, hitCount, critCount, dotCount, dotCritCount )
 
-	if ( hitValue >= Recount.settings.minDPSLogValue ) then
+	if hitValue >= Recount.settings.minDPSLogValue then
 		local eventString = zo_strformat( "|cCCCC55 <<1>><<2>><<3>>|r -> |c883333 <<4>>|r - <<5>>", getTag(dotCount == 1, Recount.settings.dotTag), hitValue, getTag((critCount == 1 ) or (dotCritCount == 1), Recount.settings.critTag), targetName, abilityName )
 		Recount.CombatLogMsg( eventString )
 	end
@@ -660,15 +658,16 @@ end
 --[[==========================================
 	UnitDamageTaken
 	==========================================]]--
-local function UnitDamageTaken( unitID, abilityName, sourceName, targetname, hitValue, result )
+local function UnitDamageTaken( unitID, abilityName, sourceName, targetname, hitValue, result, hitCount, critCount, dotCount, dotCritCount )
+	if hitValue <= Recount.settings.damageIgnore then return end
 
 	local u = Recount.trackedUnits[unitID]
 
-	u.total.damageTaken = u.total.damageTaken + hitValue
 	u.session.damageTaken = u.session.damageTaken + hitValue
-
-	if sourceName ~= targetName then
-		local eventString = zo_strformat( "|cCC4444 <<1>>|r <- |c883333 <<2>>|r - <<3>>", hitValue, sourceName, abilityName)
+	u.total.damageTaken = u.total.damageTaken + hitValue
+	
+	if hitValue >= Recount.settings.minDPSLogValue then
+		local eventString = zo_strformat( "|cCC4444 <<1>><<2>><<3>>|r <- |c883333 <<4>>|r - <<5>>", getTag(dotCount == 1, Recount.settings.dotTag), hitValue, getTag((critCount == 1 ) or (dotCritCount == 1), Recount.settings.critTag), sourceName, abilityName )
 		Recount.CombatLogMsg( eventString )
 	end
 end
@@ -676,7 +675,7 @@ end
 --[[==========================================
 	UnitHealingDone
 	==========================================]]--
-local function UnitHealingDone( unitID, abilityName, targetName, hitValue, result, hitCount, critCount, dotCount, dotCritCount  )
+local function UnitHealingDone( unitID, abilityName, sourceName, targetName, hitValue, result, hitCount, critCount, dotCount, dotCritCount )
 	if hitValue <= Recount.settings.healIgnore then return end
 
 	local u = Recount.trackedUnits[unitID]
@@ -691,28 +690,35 @@ local function UnitHealingDone( unitID, abilityName, targetName, hitValue, resul
 	AddAbilityValue( u.total.healPerAbility, abilityName, hitValue, hitCount, critCount, dotCount, dotCritCount )
 	AddAbilityValue( u.session.healPerAbility, abilityName, hitValue, hitCount, critCount, dotCount, dotCritCount )
 
-	if ( hitValue >= Recount.settings.minHPSLogValue ) then
-		local eventString = zo_strformat( "|c449944 <<1>><<2>><<3>>|r -> |c447744 <<4>>|r - <<5>>", getTag(dotCount > 0, Recount.settings.dotTag), hitValue, getTag((critCount > 0) or (dotCritCount > 0), Recount.settings.critTag), targetName, abilityName )
-		Recount.CombatLogMsg( eventString )
+	if sourceUnitId ~= targetUnitId then -- this prevents the double heal log when you heal yourself or a pet does
+		if hitValue >= Recount.settings.minHPSLogValue then
+			local eventString = zo_strformat( "|c449944 <<1>><<2>><<3>>|r -> |c447744 <<4>>|r - <<5>>", getTag(dotCount > 0, Recount.settings.dotTag), hitValue, getTag((critCount > 0) or (dotCritCount > 0), Recount.settings.critTag), targetName, abilityName )
+			Recount.CombatLogMsg( eventString )
+		end
 	end
-	
 end
 
 --[[==========================================
 	UnitHealingTaken
 	==========================================]]--
-local function UnitHealingTaken( unitID, abilityName, sourceName, targetName, hitValue, result )
+local function UnitHealingTaken( unitID, abilityName, sourceName, targetName, hitValue, result, hitCount, critCount, dotCount, dotCritCount )
+	if hitValue <= Recount.settings.healIgnore then return end
 
 	local u = Recount.trackedUnits[unitID]
 
-	u.total.healingTaken = u.total.healingTaken + hitValue
 	u.session.healingTaken = u.session.healingTaken + hitValue
+	u.session.healingCount = u.session.healingCount + hitCount + dotCount
+	u.session.critHealingCount = u.session.critHealingCount + critCount + dotCritCount
+	u.total.healingTaken = u.total.healingTaken + hitValue
+	u.total.healingCount = u.total.healingCount +  hitCount + dotCount
+	u.total.critHealingCount = u.total.critHealingCount + critCount + dotCritCount
 
-	if sourceName ~= targetName then
-		if ( hitValue >= Recount.settings.minHPSLogValue ) then
-			local eventString = zo_strformat( "|c449944 <<1>>|r <- |c447744 <<2>>|r - <<3>>", hitValue, targetName, abilityName)
-			Recount.CombatLogMsg( eventString )
-		end
+	AddAbilityValue( u.total.healPerAbility, abilityName, hitValue, hitCount, critCount, dotCount, dotCritCount )
+	AddAbilityValue( u.session.healPerAbility, abilityName, hitValue, hitCount, critCount, dotCount, dotCritCount )
+
+	if hitValue >= Recount.settings.minHPSLogValue then
+		local eventString = zo_strformat( "|c449944 <<1>><<2>><<3>>|r <- |c447744 <<4>>|r - <<5>>", getTag(dotCount > 0, Recount.settings.dotTag), hitValue, getTag((critCount > 0 ) or (dotCritCount > 0), Recount.settings.critTag), sourceName, abilityName )
+		Recount.CombatLogMsg( eventString )
 	end
 end
 
@@ -721,7 +727,7 @@ end
 
 	Message handler
 	==========================================]]--
-function Recount.CombatEvent( eventCode, result, isError, abilityName, abilityGraphic, abilityActionSlotType, sourceName, sourceType, targetName, targetType, hitValue, powerType, damageType, log )
+function Recount.CombatEvent( eventCode, result, isError, abilityName, abilityGraphic, abilityActionSlotType, sourceName, sourceType, targetName, targetType, hitValue, powerType, damageType, log, sourceUnitId, targetUnitId, abilityId, overflow )
 	if ( Recount.settings.suspendDataCollectionWhileHidden and Recount.settings.wndMain.isVisible == false ) then
 		return
 	end
@@ -755,17 +761,17 @@ function Recount.CombatEvent( eventCode, result, isError, abilityName, abilityGr
 		
 		if ( targetType == COMBAT_UNIT_TYPE_PLAYER ) then
 			if ( eventType == EVENT_TYPE_DAMAGE ) then
-				UnitDamageTaken( 1, abilityName, sourceName, targetName, hitValue, result)
+				UnitDamageTaken( 1, abilityName, sourceName, targetName, hitValue, result, hitCount, critCount, dotCount, dotCritCount )
 			elseif ( eventType == EVENT_TYPE_HEAL ) then
-				UnitHealingTaken( 1, abilityName, sourceName, targetName, hitValue, result)
+				UnitHealingTaken( 1, abilityName, sourceName, targetName, hitValue, result, hitCount, critCount, dotCount, dotCritCount )
 			end
 		end
 		
 		if ( sourceType == COMBAT_UNIT_TYPE_PLAYER or sourceType == COMBAT_UNIT_TYPE_PLAYER_PET ) then
 			if ( eventType == EVENT_TYPE_HEAL ) then
-				UnitHealingDone( 1, abilityName, targetName, hitValue , result, hitCount, critCount, dotCount, dotCritCount )
+				UnitHealingDone( 1, abilityName, sourceName, targetName, hitValue, result, hitCount, critCount, dotCount, dotCritCount )
 			elseif ( eventType == EVENT_TYPE_DAMAGE ) then
-				UnitDamageDone( 1, abilityName, sourceName, targetName, hitValue , result, hitCount, critCount, dotCount, dotCritCount )
+				UnitDamageDone( 1, abilityName, sourceName, targetName, hitValue, result, hitCount, critCount, dotCount, dotCritCount )
 			end
 		end
 	end

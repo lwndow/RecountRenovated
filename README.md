@@ -47,6 +47,11 @@ Go to the "Elder Scrolls Online" folder in your Documents
 * **NOTE**: This installs as `Recount` not `RecountRenovated` to persist from previous settings. 
 
 ### Release History
+#### 0.7.4 (lwndow)
+* add crit markers to incoming values (thanks Tyranok)
+* update combat event values to current API spec
+* ignore healing done to self to avoid a double log line, only show the inbound heal in that case
+
 #### 0.7.3 (lwndow)
 * API bump for Flames of Ambition (100034)
 
@@ -64,27 +69,3 @@ Go to the "Elder Scrolls Online" folder in your Documents
   * Added damage ignore options to the addon settings menu.
   * **NOTE** (lwndow): My version differs slightly from his as it ignores printing to the log but still tallies for total DPS/HPS 
 * fixed auto toggle to damage done, but default this to false in agreeance with Ferather's stance
-
-#### 0.6.5 (lwndow)
-* added option for account-wide settings vs per-character
-
-#### 0.6.4 (lwndow)
-* updated to API 100031 (Greymoor) & 100032 (Stonethorn)
-* removed libstub dependency
-* added hard dependencies, removed embedded libs (you need to grab them from ESOUI/Minion)
-* added request from forum to ignore values below a certain threshold in the log
-
-#### v0.6.3 (Shadow-Fighter)
-* updated to API 100024
-
-#### v0.6.2 (Shadow-Fighter)
-* updated LibAddonMenu-2.0 r24 to LibAddonMenu-2.0 r26
-
-#### v0.6.1 (Shadow-Fighter)
-* updated to API 100023
-
-#### v0.6.0 (Shadow-Fighter)
-* updated to API 100021
-
-#### pre v6
-* info about versions prior to v6 are in `VERSIONS.md` in the repo
