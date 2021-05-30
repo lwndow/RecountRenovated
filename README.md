@@ -47,6 +47,8 @@ Go to the "Elder Scrolls Online" folder in your Documents
 * **NOTE**: This installs as `Recount` not `RecountRenovated` to persist from previous settings. 
 
 ### Release History
+#### 0.7.5 (lwmdow)
+* API bump for Blackwood (100035)
 #### 0.7.4 (lwndow)
 * add crit markers to incoming values (thanks Tyranok)
 * update combat event values to current API spec

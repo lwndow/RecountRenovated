@@ -13,7 +13,7 @@
 Recount = {}
 Recount.name = "Recount"
 Recount.command = "/recount"
-Recount.versionString = "0.7.4"
+Recount.versionString = "0.7.5"
 Recount.versionSettings = 10
 Recount.versionBuild = 25
 
