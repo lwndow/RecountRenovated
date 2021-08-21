@@ -47,6 +47,8 @@ Go to the "Elder Scrolls Online" folder in your Documents
 * **NOTE**: This installs as `Recount` not `RecountRenovated` to persist from previous settings. 
 
 ### Release History
+#### 0.7.6 (lwndow)
+* API bump for Waking Flame (101031)
 #### 0.7.5 (lwndow)
 * API bump for Blackwood (100035)
 #### 0.7.4 (lwndow)
